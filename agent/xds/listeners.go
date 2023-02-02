@@ -70,13 +70,26 @@ func (s *ResourceGenerator) listenersFromSnapshot(cfgSnap *proxycfg.ConfigSnapsh
 
 // listenersFromSnapshotConnectProxy returns the "listeners" for a connect proxy service
 func (s *ResourceGenerator) listenersFromSnapshotConnectProxy(cfgSnap *proxycfg.ConfigSnapshot) ([]proto.Message, error) {
-	resources := make([]proto.Message, 1)
+	var resources []proto.Message
 	var err error
+
+	if cfgSnap.Proxy.PermissiveMTLS {
+		resources = make([]proto.Message, 2)
+	} else {
+		resources = make([]proto.Message, 1)
+	}
 
 	// Configure inbound listener.
 	resources[0], err = s.makeInboundListener(cfgSnap, xdscommon.PublicListenerName)
 	if err != nil {
 		return nil, err
+	}
+
+	if cfgSnap.Proxy.PermissiveMTLS {
+		resources[1], err = s.makeInboundNonMTLSListener(cfgSnap, xdscommon.PublicPermissiveListenerName)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	// This outboundListener is exclusively used when transparent proxy mode is active.
@@ -1428,7 +1441,163 @@ func (s *ResourceGenerator) makeInboundListener(cfgSnap *proxycfg.ConfigSnapshot
 		return nil, fmt.Errorf("failed to attach Consul filters and TLS context to custom public listener: %v", err)
 	}
 
+	// not using the filterchain approach
+	if false { // cfgSnap.Proxy.PermissiveMTLS {
+		for _, chain := range l.FilterChains {
+			if chain.FilterChainMatch == nil {
+				chain.FilterChainMatch = &envoy_listener_v3.FilterChainMatch{}
+			}
+			chain.FilterChainMatch.TransportProtocol = "tls"
+			//chain.FilterChainMatch.ApplicationProtocols = []string{
+			//	"ALPN",
+			//}
+		}
+		chain, err := makePermissiveFilterChain(cfgSnap, filterOpts)
+		if err != nil {
+			return nil, fmt.Errorf("unable to add permissive mtls filters")
+		}
+		l.FilterChains = append(l.FilterChains, chain)
+
+		tlsInspector, err := anypb.New(&envoy_tls_inspector_v3.TlsInspector{})
+		if err != nil {
+			return nil, err
+		}
+
+		l.ListenerFilters = append(l.ListenerFilters, &envoy_listener_v3.ListenerFilter{
+			Name: "tls_inspector",
+			ConfigType: &envoy_listener_v3.ListenerFilter_TypedConfig{
+				TypedConfig: tlsInspector,
+			},
+			//FilterDisabled: &envoy_listener_v3.ListenerFilterChainMatchPredicate{
+			//	Rule: &envoy_listener_v3.ListenerFilterChainMatchPredicate_AnyMatch{
+			//		AnyMatch: true,
+			//	},
+			//},
+		})
+
+	}
+
 	return l, err
+}
+
+func (s *ResourceGenerator) makeInboundNonMTLSListener(cfgSnap *proxycfg.ConfigSnapshot, name string) (proto.Message, error) {
+	var l *envoy_listener_v3.Listener
+	var err error
+
+	cfg, err := ParseProxyConfig(cfgSnap.Proxy.Config)
+	if err != nil {
+		// Don't hard fail on a config typo, just warn. The parse func returns
+		// default config if there is an error so it's safe to continue.
+		s.Logger.Warn("failed to parse Connect.Proxy.Config", "error", err)
+	}
+
+	// TODO: HTP filter
+
+	// TODO:
+
+	// No JSON user config, use default listener address
+	// Default to listening on all addresses, but override with bind address if one is set.
+	addr := cfgSnap.Address
+	if addr == "" {
+		addr = "0.0.0.0"
+	}
+	if cfg.BindAddress != "" {
+		addr = cfg.BindAddress
+	}
+
+	// We use the service port for the non-mTLS inbound listener.
+	// cfgSnap.Port is the public listener port (mTLS)
+	port := cfgSnap.Proxy.LocalServicePort // ?
+	if port <= 0 {
+		s.Logger.Debug("no service port defined for service %s; non-mTLS lisener not configured.", cfgSnap.Service)
+	}
+
+	opts := makeListenerOpts{
+		name:       name,
+		accessLogs: cfgSnap.Proxy.AccessLogs,
+		addr:       addr,
+		port:       port,
+		direction:  envoy_core_v3.TrafficDirection_INBOUND,
+		logger:     s.Logger,
+	}
+	l = makeListener(opts)
+	s.injectConnectionBalanceConfig(cfg.BalanceInboundConnections, l)
+
+	// TODO: This config is the same as applied to the mTLS inbound listener.
+	// Will applying the tracing here be compatible? Or do users need different
+	// tracing config?
+	var tracing *envoy_http_v3.HttpConnectionManager_Tracing
+	if cfg.ListenerTracingJSON != "" {
+		if tracing, err = makeTracingFromUserConfig(cfg.ListenerTracingJSON); err != nil {
+			s.Logger.Warn("failed to parse ListenerTracingJSON config", "error", err)
+		}
+	}
+
+	filterOpts := listenerFilterOpts{
+		protocol:         cfg.Protocol,
+		filterName:       name,
+		routeName:        name,
+		cluster:          xdscommon.LocalAppClusterName,
+		requestTimeoutMs: cfg.LocalRequestTimeoutMs,
+		idleTimeoutMs:    cfg.LocalIdleTimeoutMs,
+		tracing:          tracing,
+		accessLogs:       &cfgSnap.Proxy.AccessLogs,
+		logger:           s.Logger,
+	}
+	// TODO: http filter config? We don't need rbac/intentions.
+	// I'm not sure about the mesh XFCC stuff.
+
+	// If an inbound connect limit is set, inject a connection limit filter on each chain.
+	if cfg.MaxInboundConnections > 0 {
+		connectionLimitFilter, err := makeConnectionLimitFilter(cfg.MaxInboundConnections)
+		if err != nil {
+			return nil, err
+		}
+		l.FilterChains = []*envoy_listener_v3.FilterChain{
+			{
+				Filters: []*envoy_listener_v3.Filter{
+					connectionLimitFilter,
+				},
+			},
+		}
+	}
+
+	filter, err := makeListenerFilter(filterOpts)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(l.FilterChains) > 0 {
+		// The list of FilterChains has already been initialized
+		l.FilterChains[0].Filters = append(l.FilterChains[0].Filters, filter)
+	} else {
+		l.FilterChains = []*envoy_listener_v3.FilterChain{
+			{
+				Filters: []*envoy_listener_v3.Filter{
+					filter,
+				},
+			},
+		}
+	}
+
+	// We don't need finalizePublicListenerFromConfig (that applies tls and intentions)
+	return l, err
+}
+
+func makePermissiveFilterChain(cfgSnap *proxycfg.ConfigSnapshot, opts listenerFilterOpts) (*envoy_listener_v3.FilterChain, error) {
+	// try adding ANYthing to envoy config
+	filter, err := makeHTTPFilter(opts)
+	if err != nil {
+		return nil, err
+	}
+	chain := &envoy_listener_v3.FilterChain{
+		FilterChainMatch: &envoy_listener_v3.FilterChainMatch{
+			TransportProtocol:    "raw_buffer",
+			ApplicationProtocols: []string{},
+		},
+		Filters: []*envoy_listener_v3.Filter{filter},
+	}
+	return chain, nil
 }
 
 // finalizePublicListenerFromConfig is used for best-effort injection of Consul filter-chains onto listeners.

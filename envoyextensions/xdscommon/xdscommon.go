@@ -11,7 +11,8 @@ import (
 
 const (
 	// PublicListenerName is the name we give the public listener in Envoy config.
-	PublicListenerName = "public_listener"
+	PublicListenerName           = "public_listener"
+	PublicPermissiveListenerName = "public_permissive_listener"
 
 	// OutboundListenerName is the name we give the outbound Envoy listener when transparent proxy mode is enabled.
 	OutboundListenerName = "outbound_listener"
