@@ -95,6 +95,20 @@ const (
 	ProxyModeDirect ProxyMode = "direct"
 )
 
+type MutualTLSMode string
+
+const (
+	// MutualTLSModeDefault indicates no specific mode. Because MutualTLSMode is not
+	// present in other configuration layers, this is functionally equivalent to "strict".
+	MutualTLSModeDefault MutualTLSMode = ""
+
+	// MutualTLSModeStrict requires Consul mTLS for inbound traffic to this service.
+	MutualTLSModeStrict MutualTLSMode = "strict"
+
+	// MutualTLSModePermissive allows both Consul mTLS and non-mTLS traffic to this service.
+	MutualTLSModePermissive MutualTLSMode = "permissive"
+)
+
 type TransparentProxyConfig struct {
 	// The port of the listener where outbound application traffic is being redirected to.
 	OutboundListenerPort int `json:",omitempty" alias:"outbound_listener_port"`
@@ -286,6 +300,7 @@ type ServiceConfigEntry struct {
 	Protocol                  string                  `json:",omitempty"`
 	Mode                      ProxyMode               `json:",omitempty"`
 	TransparentProxy          *TransparentProxyConfig `json:",omitempty" alias:"transparent_proxy"`
+	MutualTLSMode             MutualTLSMode           `json:",omitempty" alias:"mutual_tls_mode"`
 	MeshGateway               MeshGatewayConfig       `json:",omitempty" alias:"mesh_gateway"`
 	Expose                    ExposeConfig            `json:",omitempty"`
 	ExternalSNI               string                  `json:",omitempty" alias:"external_sni"`

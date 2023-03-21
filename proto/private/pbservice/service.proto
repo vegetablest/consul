@@ -75,6 +75,9 @@ message ConnectProxyConfig {
 
   // AccessLogsConfig defines envoys access log configuration.
   AccessLogsConfig AccessLogs = 13;
+
+  // TODO: should this go here?
+  string MutualTLSMode = 14;
 }
 
 // Upstream represents a single upstream dependency for a service or proxy. It

@@ -1217,6 +1217,7 @@ func ServiceDefaultsToStructs(s *ServiceDefaults, t *structs.ServiceConfigEntry)
 	if s.TransparentProxy != nil {
 		TransparentProxyConfigToStructs(s.TransparentProxy, &t.TransparentProxy)
 	}
+	t.MutualTLSMode = mutualTLSModeToStructs(s.MutualTLSMode)
 	if s.MeshGateway != nil {
 		MeshGatewayConfigToStructs(s.MeshGateway, &t.MeshGateway)
 	}
@@ -1252,6 +1253,7 @@ func ServiceDefaultsFromStructs(t *structs.ServiceConfigEntry, s *ServiceDefault
 		TransparentProxyConfigFromStructs(&t.TransparentProxy, &x)
 		s.TransparentProxy = &x
 	}
+	s.MutualTLSMode = mutualTLSModeFromStructs(t.MutualTLSMode)
 	{
 		var x MeshGatewayConfig
 		MeshGatewayConfigFromStructs(&t.MeshGateway, &x)

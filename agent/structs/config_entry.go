@@ -21,6 +21,7 @@ import (
 	"github.com/hashicorp/consul/agent/envoyextensions"
 	"github.com/hashicorp/consul/lib"
 	"github.com/hashicorp/consul/lib/decode"
+	"github.com/hashicorp/consul/lib/stringslice"
 )
 
 const (
@@ -121,6 +122,28 @@ type WarningConfigEntry interface {
 	ConfigEntry
 }
 
+type MutualTLSMode string
+
+const (
+	MutualTLSModeDefault    MutualTLSMode = ""
+	MutualTLSModeStrict     MutualTLSMode = "strict"
+	MutualTLSModePermissive MutualTLSMode = "permissive"
+)
+
+var allMutualTLSModes = []string{
+	string(MutualTLSModeDefault),
+	string(MutualTLSModeStrict),
+	string(MutualTLSModePermissive),
+}
+
+func (m MutualTLSMode) validate() error {
+	sm := string(m)
+	if stringslice.Contains(allMutualTLSModes, sm) {
+		return nil
+	}
+	return fmt.Errorf("Invalid MutualTLSMode %q. Must be one of %v", sm, allMutualTLSModes)
+}
+
 // ServiceConfiguration is the top-level struct for the configuration of a service
 // across the entire cluster.
 type ServiceConfigEntry struct {
@@ -129,6 +152,7 @@ type ServiceConfigEntry struct {
 	Protocol                  string
 	Mode                      ProxyMode              `json:",omitempty"`
 	TransparentProxy          TransparentProxyConfig `json:",omitempty" alias:"transparent_proxy"`
+	MutualTLSMode             MutualTLSMode          `json:",omitempty" alias:"mutual_tls_mode"`
 	MeshGateway               MeshGatewayConfig      `json:",omitempty" alias:"mesh_gateway"`
 	Expose                    ExposeConfig           `json:",omitempty"`
 	ExternalSNI               string                 `json:",omitempty" alias:"external_sni"`
@@ -213,6 +237,10 @@ func (e *ServiceConfigEntry) Validate() error {
 
 	if !isValidConnectionBalance(e.BalanceInboundConnections) {
 		validationErr = multierror.Append(validationErr, fmt.Errorf("invalid value for balance_inbound_connections: %v", e.BalanceInboundConnections))
+	}
+
+	if err := e.MutualTLSMode.validate(); err != nil {
+		return err
 	}
 
 	// External endpoints are invalid with an existing service's upstream configuration
@@ -1170,6 +1198,7 @@ type ServiceConfigResponse struct {
 	MeshGateway       MeshGatewayConfig      `json:",omitempty"`
 	Expose            ExposeConfig           `json:",omitempty"`
 	TransparentProxy  TransparentProxyConfig `json:",omitempty"`
+	MutualTLSMode     MutualTLSMode          `json:"-"` // TODO: Should this go here?
 	Mode              ProxyMode              `json:",omitempty"`
 	Destination       DestinationConfig      `json:",omitempty"`
 	AccessLogs        AccessLogsConfig       `json:",omitempty"`

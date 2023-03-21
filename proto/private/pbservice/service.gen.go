@@ -48,6 +48,7 @@ func ConnectProxyConfigToStructs(s *ConnectProxyConfig, t *structs.ConnectProxyC
 	if s.TransparentProxy != nil {
 		TransparentProxyConfigToStructs(s.TransparentProxy, &t.TransparentProxy)
 	}
+	t.MutualTLSMode = structs.MutualTLSMode(s.MutualTLSMode)
 	if s.AccessLogs != nil {
 		AccessLogsConfigToStructs(s.AccessLogs, &t.AccessLogs)
 	}
@@ -80,6 +81,7 @@ func ConnectProxyConfigFromStructs(t *structs.ConnectProxyConfig, s *ConnectProx
 		TransparentProxyConfigFromStructs(&t.TransparentProxy, &x)
 		s.TransparentProxy = &x
 	}
+	s.MutualTLSMode = string(t.MutualTLSMode)
 	{
 		var x AccessLogsConfig
 		AccessLogsConfigFromStructs(&t.AccessLogs, &x)

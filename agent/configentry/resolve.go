@@ -117,6 +117,8 @@ func ComputeResolvedServiceConfig(
 			thisReply.ProxyConfig = proxyConf
 		}
 
+		thisReply.MutualTLSMode = serviceConf.MutualTLSMode
+
 		thisReply.Meta = serviceConf.Meta
 		// Service defaults' envoy extensions are appended to the proxy defaults extensions so that proxy defaults
 		// extensions are applied first.
