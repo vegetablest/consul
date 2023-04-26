@@ -96,17 +96,10 @@ require (
 	github.com/shirou/gopsutil/v3 v3.22.8
 	github.com/stretchr/testify v1.8.2
 	go.etcd.io/bbolt v1.3.6
-<<<<<<< HEAD
 	go.opentelemetry.io/otel v1.15.0-rc.1
 	go.opentelemetry.io/otel/metric v1.15.0-rc.1
 	go.opentelemetry.io/otel/sdk v1.15.0-rc.1
 	go.opentelemetry.io/otel/sdk/metric v0.38.0-rc.1
-=======
-	go.opentelemetry.io/otel v1.15.0-rc.2
-	go.opentelemetry.io/otel/metric v1.15.0-rc.2
-	go.opentelemetry.io/otel/sdk v1.15.0-rc.2
-	go.opentelemetry.io/otel/sdk/metric v0.38.0-rc.2
->>>>>>> 597cb654e7 (Initialize OTELSink with sync.Map for all the instrument stores.)
 	go.opentelemetry.io/proto/otlp v0.19.0
 	go.uber.org/goleak v1.1.10
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
