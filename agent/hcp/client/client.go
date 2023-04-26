@@ -15,6 +15,11 @@ import (
 	httptransport "github.com/go-openapi/runtime/client"
 	"github.com/go-openapi/strfmt"
 
+<<<<<<< HEAD
+=======
+	"github.com/hashicorp/consul/agent/hcp/config"
+	"github.com/hashicorp/consul/version"
+>>>>>>> 2d33bd7c31 (Added telemetry agent to client and init sink in deps)
 	hcptelemetry "github.com/hashicorp/hcp-sdk-go/clients/cloud-consul-telemetry-gateway/preview/2023-04-14/client/consul_telemetry_service"
 	hcpgnm "github.com/hashicorp/hcp-sdk-go/clients/cloud-global-network-manager-service/preview/2022-02-15/client/global_network_manager_service"
 	gnmmod "github.com/hashicorp/hcp-sdk-go/clients/cloud-global-network-manager-service/preview/2022-02-15/models"
@@ -37,9 +42,15 @@ type MetricsConfig struct {
 	Endpoint string
 }
 type TelemetryConfig struct {
+<<<<<<< HEAD
 	Endpoint      string
 	Labels        map[string]string
 	MetricsConfig *MetricsConfig
+=======
+	Endpoint        string
+	Labels          map[string]string
+	MetricsOverride *MetricsConfig
+>>>>>>> 2d33bd7c31 (Added telemetry agent to client and init sink in deps)
 }
 
 type BootstrapConfig struct {
@@ -107,7 +118,11 @@ func (c *hcpClient) FetchTelemetryConfig(ctx context.Context) (*TelemetryConfig,
 	return &TelemetryConfig{
 		Endpoint: payloadConfig.Endpoint,
 		Labels:   payloadConfig.Labels,
+<<<<<<< HEAD
 		MetricsConfig: &MetricsConfig{
+=======
+		MetricsOverride: &MetricsConfig{
+>>>>>>> 2d33bd7c31 (Added telemetry agent to client and init sink in deps)
 			Filters:  payloadConfig.Metrics.IncludeList,
 			Endpoint: payloadConfig.Metrics.Endpoint,
 		},
