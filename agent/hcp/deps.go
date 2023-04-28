@@ -47,9 +47,16 @@ func NewDeps(cfg config.CloudConfig, logger hclog.Logger) (d Deps, err error) {
 func sink(hcpClient hcpclient.Client, cfg hcpclient.CloudConfig, logger hclog.Logger) *telemetry.OTELSink {
 	ctx := context.Background()
 	ctx = hclog.WithContext(ctx, logger)
-	url, err := verifyCCMRegistration(ctx, hcpClient)
+
+	telemetryCfg, err := fetchTelemetryConfig(ctx, hcpClient)
 	if err != nil {
-		logger.Error("failed to verify CCM registration: %w", err)
+		logger.Error("Failed to fetch telemetry config %w", err)
+		return nil
+	}
+
+	url, err := verifyCCMRegistration(telemetryCfg)
+	if err != nil {
+		logger.Error("Failed to verify CCM registration %w", err)
 		return nil
 	}
 
@@ -66,8 +73,10 @@ func sink(hcpClient hcpclient.Client, cfg hcpclient.CloudConfig, logger hclog.Lo
 	}
 
 	sinkOpts := &telemetry.OTELSinkOpts{
-		Logger: logger,
-		Reader: telemetry.NewOTELReader(metricsClient, url, 10*time.Second),
+		Logger:  logger,
+		Labels:  telemetryCfg.Labels,
+		Filters: telemetryCfg.MetricsConfig.Filters,
+		Reader:  telemetry.NewOTELReader(metricsClient, url, 10*time.Second),
 	}
 
 	sink, err := telemetry.NewOTELSink(sinkOpts)
@@ -79,18 +88,22 @@ func sink(hcpClient hcpclient.Client, cfg hcpclient.CloudConfig, logger hclog.Lo
 	return sink
 }
 
-// verifyCCMRegistration checks that a server is registered with the HCP management plane
-// by making a HTTP request to the HCP TelemetryConfig endpoint.
-// If registered, it returns the endpoint for the HCP Telemetry Gateway endpoint where metrics should be forwarded.
-func verifyCCMRegistration(ctx context.Context, client hcpclient.Client) (string, error) {
+func fetchTelemetryConfig(ctx context.Context, client hcpclient.Client) (*hcpclient.TelemetryConfig, error) {
 	reqCtx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
 
 	telemetryCfg, err := client.FetchTelemetryConfig(reqCtx)
 	if err != nil {
-		return "", fmt.Errorf("failed to fetch telemetry config %w", err)
+		return nil, fmt.Errorf("failed to fetch telemetry config %w", err)
 	}
 
+	return telemetryCfg, nil
+}
+
+// verifyCCMRegistration checks that a server is registered with the HCP management plane
+// by making a HTTP request to the HCP TelemetryConfig endpoint.
+// If registered, it returns the endpoint for the HCP Telemetry Gateway endpoint where metrics should be forwarded.
+func verifyCCMRegistration(telemetryCfg *hcpclient.TelemetryConfig) (string, error) {
 	endpoint := telemetryCfg.Endpoint
 	if override := telemetryCfg.MetricsConfig.Endpoint; override != "" {
 		endpoint = override

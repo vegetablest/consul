@@ -20,13 +20,16 @@ import (
 )
 
 type OTELSinkOpts struct {
-	Reader otelsdk.Reader
-	Logger hclog.Logger
+	Reader  otelsdk.Reader
+	Logger  hclog.Logger
+	Filters []string
+	Labels  map[string]string
 }
 
 type OTELSink struct {
 	spaceReplacer *strings.Replacer
 	logger        hclog.Logger
+	filters       *FilterList
 
 	meterProvider *otelsdk.MeterProvider
 	meter         *otelmetric.Meter
@@ -54,8 +57,21 @@ func NewOTELSink(opts *OTELSinkOpts) (*OTELSink, error) {
 		return nil, fmt.Errorf("failed to init OTEL sink: provide valid OTELSinkOpts Reader")
 	}
 
+	attrs := make([]attribute.KeyValue, len(opts.Labels))
+	for k, v := range opts.Labels {
+		attrs = append(attrs, attribute.KeyValue{
+			Key:   attribute.Key(k),
+			Value: attribute.StringValue(v),
+		})
+	}
+
+	filterList, err := NewFilterList(opts.Filters)
+	if err != nil {
+		opts.Logger.Error("Failed to initialize all filters: %w", err)
+	}
+
 	// Setup OTEL Metrics SDK to aggregate, convert and export metrics periodically.
-	res := resource.NewSchemaless()
+	res := resource.NewWithAttributes("", attrs...)
 	meterProvider := otelsdk.NewMeterProvider(otelsdk.WithResource(res), otelsdk.WithReader(opts.Reader))
 	meter := meterProvider.Meter("github.com/hashicorp/consul/agent/hcp/telemetry")
 
@@ -65,6 +81,7 @@ func NewOTELSink(opts *OTELSinkOpts) (*OTELSink, error) {
 	}
 
 	return &OTELSink{
+		filters:              filterList,
 		spaceReplacer:        strings.NewReplacer(" ", "_"),
 		logger:               opts.Logger.Named("otel_sink"),
 		meterProvider:        meterProvider,
@@ -97,6 +114,10 @@ func (o *OTELSink) IncrCounter(key []string, val float32) {
 func (o *OTELSink) SetGaugeWithLabels(key []string, val float32, labels []gometrics.Label) {
 	k := o.flattenKey(key)
 
+	if !o.filters.Match(k) {
+		return
+	}
+
 	// Set value in global Gauge store.
 	o.gaugeStore.Store(k, float64(val), toAttributes(labels))
 
@@ -117,6 +138,10 @@ func (o *OTELSink) SetGaugeWithLabels(key []string, val float32, labels []gometr
 // AddSampleWithLabels emits a Consul sample metric that gets registed by an OpenTelemetry Histogram instrument.
 func (o *OTELSink) AddSampleWithLabels(key []string, val float32, labels []gometrics.Label) {
 	k := o.flattenKey(key)
+
+	if !o.filters.Match(k) {
+		return
+	}
 
 	o.mutex.Lock()
 	defer o.mutex.Unlock()
@@ -139,6 +164,10 @@ func (o *OTELSink) AddSampleWithLabels(key []string, val float32, labels []gomet
 // IncrCounterWithLabels emits a Consul counter metric that gets registed by an OpenTelemetry Histogram instrument.
 func (o *OTELSink) IncrCounterWithLabels(key []string, val float32, labels []gometrics.Label) {
 	k := o.flattenKey(key)
+
+	if !o.filters.Match(k) {
+		return
+	}
 
 	o.mutex.Lock()
 	defer o.mutex.Unlock()

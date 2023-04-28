@@ -1,7 +1,6 @@
 package hcp
 
 import (
-	"context"
 	"fmt"
 	"testing"
 
@@ -75,69 +74,51 @@ func TestSink(t *testing.T) {
 
 func TestVerifyCCMRegistration(t *testing.T) {
 	for name, test := range map[string]struct {
-		expect      func(*client.MockClient)
-		wantErr     string
-		expectedURL string
+		telemetryCfg *client.TelemetryConfig
+		wantErr      string
+		expectedURL  string
 	}{
-		"failsWithFetchTelemetryFailure": {
-			expect: func(mockClient *client.MockClient) {
-				mockClient.EXPECT().FetchTelemetryConfig(mock.Anything).Return(nil, fmt.Errorf("FetchTelemetryConfig error"))
-			},
-			wantErr: "failed to fetch telemetry config",
-		},
 		"failsWithURLParseErr": {
-			expect: func(mockClient *client.MockClient) {
-				mockClient.EXPECT().FetchTelemetryConfig(mock.Anything).Return(&client.TelemetryConfig{
-					// Minimum 2 chars for a domain to be valid.
-					Endpoint: "s",
-					MetricsConfig: &client.MetricsConfig{
-						// Invalid domain chars
-						Endpoint: "			",
-					},
-				}, nil)
+			telemetryCfg: &client.TelemetryConfig{
+				// Minimum 2 chars for a domain to be valid.
+				Endpoint: "s",
+				MetricsConfig: &client.MetricsConfig{
+					// Invalid domain chars
+					Endpoint: "			",
+				},
 			},
 			wantErr: "failed to parse url:",
 		},
 		"noErrWithEmptyEndpoint": {
-			expect: func(mockClient *client.MockClient) {
-				mockClient.EXPECT().FetchTelemetryConfig(mock.Anything).Return(&client.TelemetryConfig{
+			telemetryCfg: &client.TelemetryConfig{
+				Endpoint: "",
+				MetricsConfig: &client.MetricsConfig{
 					Endpoint: "",
-					MetricsConfig: &client.MetricsConfig{
-						Endpoint: "",
-					},
-				}, nil)
+				},
 			},
 			expectedURL: "",
 		},
 		"success": {
-			expect: func(mockClient *client.MockClient) {
-				mockClient.EXPECT().FetchTelemetryConfig(mock.Anything).Return(&client.TelemetryConfig{
-					Endpoint: "test.com",
-					MetricsConfig: &client.MetricsConfig{
-						Endpoint: "",
-					},
-				}, nil)
+			telemetryCfg: &client.TelemetryConfig{
+				Endpoint: "test.com",
+				MetricsConfig: &client.MetricsConfig{
+					Endpoint: "",
+				},
 			},
 			expectedURL: "https://test.com/v1/metrics",
 		},
 		"successMetricsEndpointOverride": {
-			expect: func(mockClient *client.MockClient) {
-				mockClient.EXPECT().FetchTelemetryConfig(mock.Anything).Return(&client.TelemetryConfig{
-					Endpoint: "test.com",
-					MetricsConfig: &client.MetricsConfig{
-						Endpoint: "override.com",
-					},
-				}, nil)
+			telemetryCfg: &client.TelemetryConfig{
+				Endpoint: "test.com",
+				MetricsConfig: &client.MetricsConfig{
+					Endpoint: "override.com",
+				},
 			},
 			expectedURL: "https://override.com/v1/metrics",
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
-			ctx := context.Background()
-			mClient := client.NewMockClient(t)
-			test.expect(mClient)
-
-			url, err := verifyCCMRegistration(ctx, mClient)
+			url, err := verifyCCMRegistration(test.telemetryCfg)
 			if test.wantErr != "" {
 				require.Empty(t, url)
 				require.Error(t, err)
