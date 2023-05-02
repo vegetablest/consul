@@ -1,0 +1,1 @@
+resources of type catalog.v1alpha1.Service cannot be owned by resources with type catalog.v1alpha1.Workload
