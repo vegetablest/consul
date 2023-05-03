@@ -5,6 +5,7 @@ package catalog
 
 import (
 	"github.com/hashicorp/consul/internal/catalog/internal/controllers"
+	"github.com/hashicorp/consul/internal/catalog/internal/controllers/endpoints"
 	"github.com/hashicorp/consul/internal/catalog/internal/controllers/workloadhealth"
 	"github.com/hashicorp/consul/internal/catalog/internal/types"
 	"github.com/hashicorp/consul/internal/controller"
@@ -52,6 +53,7 @@ type ControllerDependencies = controllers.Dependencies
 func DefaultControllerDependencies() ControllerDependencies {
 	return ControllerDependencies{
 		WorkloadHealthNodeMapper: workloadhealth.DefaultNodeMapper(),
+		EndpointsWorkloadMapper:  endpoints.DefaultWorkloadMapper(),
 	}
 }
 
