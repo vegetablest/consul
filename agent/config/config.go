@@ -177,6 +177,7 @@ type Config struct {
 	EnableAgentTLSForChecks          *bool               `mapstructure:"enable_agent_tls_for_checks" json:"enable_agent_tls_for_checks,omitempty"`
 	EnableCentralServiceConfig       *bool               `mapstructure:"enable_central_service_config" json:"enable_central_service_config,omitempty"`
 	EnableDebug                      *bool               `mapstructure:"enable_debug" json:"enable_debug,omitempty"`
+	EnableDevResources               *bool               `mapstructure:"enable_dev_resources" json:"enable_dev_resources,omitempty"`
 	EnableScriptChecks               *bool               `mapstructure:"enable_script_checks" json:"enable_script_checks,omitempty"`
 	EnableLocalScriptChecks          *bool               `mapstructure:"enable_local_script_checks" json:"enable_local_script_checks,omitempty"`
 	EnableSyslog                     *bool               `mapstructure:"enable_syslog" json:"enable_syslog,omitempty"`

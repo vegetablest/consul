@@ -195,6 +195,7 @@
     "EnableAgentTLSForChecks": false,
     "EnableCentralServiceConfig": false,
     "EnableDebug": false,
+    "EnableDevResources": false,
     "EnableLocalScriptChecks": false,
     "EnableRemoteScriptChecks": false,
     "EncryptKey": "hidden",

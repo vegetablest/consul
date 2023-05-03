@@ -653,6 +653,12 @@ type RuntimeConfig struct {
 	// hcl: enable_debug = (true|false)
 	EnableDebug bool
 
+	// EnableDevResources is used to enable our demo resource types for working on
+	// the resource service.
+	//
+	// hcl: enable_dev_resources = (true|false)
+	EnableDevResources bool
+
 	// EnableLocalScriptChecks controls whether health checks declared from the local
 	// config file which execute scripts are enabled. This includes regular script
 	// checks and Docker checks.

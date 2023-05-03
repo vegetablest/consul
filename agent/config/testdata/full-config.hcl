@@ -279,6 +279,7 @@ enable_acl_replication = true
 enable_agent_tls_for_checks = true
 enable_central_service_config = false
 enable_debug = true
+enable_dev_resources = true
 enable_script_checks = true
 enable_local_script_checks = true
 enable_syslog = true

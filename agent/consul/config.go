@@ -107,6 +107,10 @@ type Config struct {
 	// DevMode is used to enable a development server mode.
 	DevMode bool
 
+	// EnableDevResources is used to enable our "demo" resource types for working
+	// on the resource service.
+	EnableDevResources bool
+
 	// NodeID is a unique identifier for this node across space and time.
 	NodeID types.NodeID
 

@@ -325,6 +325,7 @@ func TestLoad_IntegrationWithFlags(t *testing.T) {
 			rt.DisableAnonymousSignature = true
 			rt.DisableKeyringFile = true
 			rt.EnableDebug = true
+			rt.EnableDevResources = true
 			rt.UIConfig.Enabled = true
 			rt.LeaveOnTerm = false
 			rt.Logging.LogLevel = "DEBUG"
@@ -6347,6 +6348,7 @@ func TestLoad_FullConfig(t *testing.T) {
 		EnableAgentTLSForChecks:          true,
 		EnableCentralServiceConfig:       false,
 		EnableDebug:                      true,
+		EnableDevResources:               true,
 		EnableRemoteScriptChecks:         true,
 		EnableLocalScriptChecks:          true,
 		EncryptKey:                       "A4wELWqH",

@@ -22,8 +22,6 @@ import (
 
 	"github.com/armon/go-metrics"
 	"github.com/armon/go-metrics/prometheus"
-	"github.com/hashicorp/consul/agent/rpcclient"
-	"github.com/hashicorp/consul/agent/rpcclient/configentry"
 	"github.com/hashicorp/go-connlimit"
 	"github.com/hashicorp/go-hclog"
 	"github.com/hashicorp/go-memdb"
@@ -34,6 +32,9 @@ import (
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 	"google.golang.org/grpc"
+
+	"github.com/hashicorp/consul/agent/rpcclient"
+	"github.com/hashicorp/consul/agent/rpcclient/configentry"
 
 	"github.com/hashicorp/consul/acl"
 	"github.com/hashicorp/consul/acl/resolver"
@@ -1291,6 +1292,7 @@ func newConsulConfig(runtimeCfg *config.RuntimeConfig, logger hclog.Logger) (*co
 
 	// Apply dev mode
 	cfg.DevMode = runtimeCfg.DevMode
+	cfg.EnableDevResources = runtimeCfg.EnableDevResources
 
 	// Override with our runtimeCfg
 	// todo(fs): these are now always set in the runtime runtimeCfg so we can simplify this

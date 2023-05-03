@@ -845,7 +845,7 @@ func (s *Server) registerResources() {
 	catalog.RegisterTypes(s.typeRegistry)
 	mesh.RegisterTypes(s.typeRegistry)
 
-	if s.config.DevMode {
+	if s.config.EnableDevResources {
 		demo.RegisterTypes(s.typeRegistry)
 		demo.RegisterControllers(s.controllerManager)
 	}
