@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package demo
 
 import "github.com/hashicorp/consul/internal/controller"
