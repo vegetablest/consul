@@ -824,28 +824,16 @@
                 "title": "Create ACL Tokens",
                 "routes": [
                   {
-                    "title": "Create a service token",
-                    "path": "security/acl/tokens/create/create-a-service-token"
-                  },
-                  {
-                    "title": "Create an agent token",
-                    "path": "security/acl/tokens/create/create-an-agent-token"
-                  },
-                  {
-                    "title": "Create a UI token",
-                    "path": "security/acl/tokens/create/create-a-ui-token"
-                  },
-                  {
-                    "title": "Create a mesh gateway token",
-                    "path": "security/acl/tokens/create/create-a-mesh-gateway-token"
-                  },
-                  {
-                    "title": "Create an ingress gateway token",
-                    "path": "security/acl/tokens/create/create-an-ingress-gateway-token"
-                  },
-                  {
-                    "title": "Create a terminating gateway token",
+                    "title": "Create a terminating gateway token (no tabs)",
                     "path": "security/acl/tokens/create/create-a-terminating-gateway-token"
+                  },
+                  {
+                    "title": "Create a terminating gateway token (tabbed interface)",
+                    "path": "security/acl/tokens/create/create-a-terminating-gateway-token-tabbed-interface"
+                  },
+                  {
+                    "title": "Create a terminating gateway token (tabbed interface and oss/ent)",
+                    "path": "security/acl/tokens/create/create-a-terminating-gateway-token-tabbed-interface-and-oss-ent"
                   }
                 ]
               }
