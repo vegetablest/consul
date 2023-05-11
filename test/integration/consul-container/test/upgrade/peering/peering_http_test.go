@@ -88,7 +88,6 @@ func TestPeering_HTTPRouter(t *testing.T) {
 //   - service-resolved named static-server with failover to static-server in accepting cluster
 //   - service-resolved named peer-static-server to static-server in accepting cluster
 func TestPeering_HTTPResolverAndFailover(t *testing.T) {
-	t.Parallel()
 
 	accepting, dialing := libtopology.BasicPeeringTwoClustersSetup(t, utils.GetLatestImageName(), utils.LatestVersion, false)
 	dialingCluster := dialing.Cluster
@@ -181,7 +180,6 @@ func TestPeering_HTTPResolverAndFailover(t *testing.T) {
 //   - service-resolved named local-static-server
 //   - service-resolved named peer-static-server
 func TestPeering_HTTPResolverAndSplitter(t *testing.T) {
-	t.Parallel()
 
 	accepting, dialing := libtopology.BasicPeeringTwoClustersSetup(t, utils.GetLatestImageName(), utils.LatestVersion, false)
 	dialingCluster := dialing.Cluster
